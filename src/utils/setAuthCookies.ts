@@ -8,7 +8,8 @@ const defaults: CookieOptions = {
   httpOnly: true,
   secure: NODE_ENV === "production",
   sameSite: NODE_ENV === "production" ? "none" : "strict",
-  domain: NODE_ENV === "production" ? ".nandhu.live" : undefined
+  domain: NODE_ENV === "production" ? "scroll-stack.nandhu.live" : "localhost"
+
 };
 
 export const getAccessTokenCookieOptions = (): CookieOptions => ({
