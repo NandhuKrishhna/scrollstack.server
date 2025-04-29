@@ -40,6 +40,14 @@ export class UserRepository implements IUserRepository {
     );
     return result;
   }
+  async updateUserPassword(id: mongoose.Types.ObjectId, hashedPassword: string) {
+    return await UserModel.findByIdAndUpdate(
+      id,
+      { $set: { password: hashedPassword } },
+      { new: true }
+    );
+  }
+
 
 
 }

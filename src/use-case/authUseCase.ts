@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, UNAUTHORIZED } from "../constants/http";
+import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, UNAUTHORIZED } from "../constants/http";
 import { IOptverificationRepository } from "../interface/IOtpReposirtory";
 import { ISessionRepository } from "../interface/ISessionRepository";
 import { IUserRepository } from "../interface/IUserRepository";
@@ -12,6 +12,7 @@ import { getVerifyEmailTemplates } from "../utils/otpTemplate";
 import { AccessTokenPayload, RefreshTokenPayload, refreshTokenSignOptions, signToken, verifyToken } from "../utils/jwt";
 import AppErrorCode from "../constants/appErrorCode";
 import { hashPassword } from "../utils/bcrypt";
+import cloudinary from "../services/cloudinary";
 
 export class AuthUseCase {
     constructor(private readonly __userRepository: IUserRepository,
@@ -87,7 +88,6 @@ export class AuthUseCase {
 
     async loginUser(userData: ILoginUserParams) {
         const existingUser = await this.__userRepository.findUserByEmail(userData.email);
-        appAssert(existingUser?.isVerified, CONFLICT, "User is not verified");
         appAssert(existingUser, UNAUTHORIZED, "Invalid email or password");
         const isPasswordMatched = await existingUser.comparePassword(userData.password);
         appAssert(isPasswordMatched, UNAUTHORIZED, "Invalid email or password");
@@ -163,14 +163,26 @@ export class AuthUseCase {
 
     async updatePassword(newPassword: string, oldPassword: string, userId: mongoose.Types.ObjectId) {
         appAssert(newPassword, NOT_FOUND, "Password is missing. Please enter your new password.");
+        appAssert(newPassword !== oldPassword, CONFLICT, "New password must be different from the current password.");
+
         const user = await this.__userRepository.findUserById(userId);
         appAssert(user, NOT_FOUND, "User not found");
-        const isValidPassword = user.comparePassword(oldPassword);
+
+        const isValidPassword = await user.comparePassword(oldPassword);
         appAssert(isValidPassword, CONFLICT, "Current Password is not correct.");
+
         const hashedPassword = await hashPassword(newPassword);
-        await this.__userRepository.updateUserById(userId, { password: hashedPassword });
+        await this.__userRepository.updateUserPassword(userId, hashedPassword);
+
+        return { message: "Password updated successfully." };
+    }
 
 
+    async updateProfile(userId: mongoose.Types.ObjectId, profilePic: string) {
+        const uploadResponse = await cloudinary.uploader.upload(profilePic);
+        const updatedUser = await this.__userRepository.updateProfile(userId, uploadResponse.secure_url);
+        appAssert(updatedUser, BAD_REQUEST, "Failed to update profile");
+        return updatedUser;
     }
 
 

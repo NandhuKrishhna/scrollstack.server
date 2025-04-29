@@ -3,7 +3,7 @@ import { AuthUseCase } from "../use-case/authUseCase";
 import catchErrors from "../utils/catchErrors";
 import { loginSchema, otpVerificationSchema, userRegisterSchema } from "../zod/user-registration";
 import { clearAuthCookies, generateRefreshTokenCookieOptions, getAccessTokenCookieOptions, setAuthCookies } from "../utils/setAuthCookies";
-import { CREATED, OK, UNAUTHORIZED } from "../constants/http";
+import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../constants/http";
 import { stringToObjectId } from "../utils/bcrypt";
 import { verifyToken } from "../utils/jwt";
 import appAssert from "../utils/appAssert";
@@ -29,6 +29,7 @@ export class AuthController {
     otpVerificationHandler = catchErrors(async (req: Request, res: Response) => {
         const userId = stringToObjectId(req.body.userId);
         const { code } = otpVerificationSchema.parse(req.body);
+        console.log(typeof code)
         await this.__authUseCase.verifyOtp(code, userId);
         return res.status(OK).json({
             success: true,
@@ -80,6 +81,18 @@ export class AuthController {
             message: "Password Updated Successfully"
         })
     })
+
+    updateProfileHandler = catchErrors(async (req: Request, res: Response) => {
+        const { profilePic } = req.body;
+        appAssert(profilePic, BAD_REQUEST, "Profile picture is required");
+        const { userId } = req as AuthenticatedRequest;
+
+        const user = await this.__authUseCase.updateProfile(userId, profilePic);
+        res.status(OK).json({
+            message: "Profile picture updated successfully",
+            profilePicture: user.profilePicture,
+        });
+    });
 
 }
 

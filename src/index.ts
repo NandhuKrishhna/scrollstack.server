@@ -6,6 +6,8 @@ import { APP_ORIGIN, PORT } from "./constants/env";
 import { connectDB } from "./config/MongoDBClient";
 import errorHandler from "./middleware/errorHandler";
 import authRouter from "./routes/auth-router";
+import articleRouter from "./routes/article-router";
+import authenticate from "./middleware/authMiddleware";
 
 
 
@@ -26,6 +28,8 @@ app.use(
 
 app.options("*", cors());
 app.use("/auth", authRouter);
+app.use("/auth", authenticate, articleRouter);
+
 app.use(errorHandler);
 
 app.listen(PORT, async () => {

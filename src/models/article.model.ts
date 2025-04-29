@@ -1,15 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { Category } from '../utils/article.enum';
 
-export enum Category {
-    Sports = 'Sports',
-    Politics = 'Politics',
-    Space = 'Space',
-    Technology = 'Technology',
-    Health = 'Health',
-    Education = 'Education',
-    Entertainment = 'Entertainment',
-    Other = 'Other',
-}
+
+
 
 export enum ArticleStatus {
     Draft = 'Draft',
@@ -68,7 +61,7 @@ const ArticleSchema: Schema = new Schema(
         status: {
             type: String,
             enum: Object.values(ArticleStatus),
-            default: ArticleStatus.Draft,
+            default: ArticleStatus.Published,
         },
         likes: {
             type: Number,

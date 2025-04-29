@@ -9,6 +9,8 @@ export interface IUserRepository {
   updateUserById(id: mongoose.Types.ObjectId, updates: Partial<IUserDocument>): Promise<IUserDocument | null>;
   updateUserByEmail(email: string, updates: Partial<IUserDocument>): Promise<IUserDocument | null>;
   findUserById(id: mongoose.Types.ObjectId): Promise<IUserDocument | null>;
+  updateUserPassword(id: mongoose.Types.ObjectId, hashedPassword: string): Promise<IUserDocument | null>;
+  updateProfile(userId: mongoose.Types.ObjectId, profilePic: string): Promise<IUserDocument | null>;
 
 }
 

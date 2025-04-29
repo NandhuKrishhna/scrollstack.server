@@ -82,5 +82,12 @@ export class ArticlesControllerUseCase {
         appAssert(article, NOT_FOUND, "Article not found.");
         await this.__articleRepository.likeArticle(userId, articleId)
     };
-
+    async disLikeArticle(userId: mongoose.Types.ObjectId, articleId: mongoose.Types.ObjectId) {
+        const user = await this.__userRepository.findUserById(userId);
+        appAssert(user, NOT_FOUND, "User not found", AppErrorCode.UserNotFound);
+        appAssert(user.isVerified, BAD_REQUEST, "User not verified");
+        const article = await this.__articleRepository.getArticleById(articleId);
+        appAssert(article, NOT_FOUND, "Article not found.");
+        await this.__articleRepository.disLike(userId, articleId)
+    };
 }

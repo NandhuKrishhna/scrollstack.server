@@ -4,6 +4,8 @@ import catchErrors from "../utils/catchErrors";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import { OK } from "../constants/http";
 import { stringToObjectId } from "../utils/bcrypt";
+import { preferencesSchema } from "../zod/preferences";
+import { createArticleSchema } from "../zod/articles";
 
 
 export class ArticlesController {
@@ -12,7 +14,7 @@ export class ArticlesController {
 
 
     addPreferencesHandler = catchErrors(async (req: Request, res: Response) => {
-        const { preferences } = req.body;
+        const { preferences } = preferencesSchema.parse(req.body);
         const { userId } = req as AuthenticatedRequest;
         await this.__articleUseCase.addPreferences(preferences, userId);
         return res.status(OK).json({
@@ -32,16 +34,17 @@ export class ArticlesController {
 
     createArticleHandler = catchErrors(async (req: Request, res: Response) => {
         const { userId: id } = req as AuthenticatedRequest;
-        const article = req.body;
-        const newArticle = await this.__articleUseCase.createArticle(id, article);
+        const validatedData = createArticleSchema.parse(req.body);
+        const newArticle = await this.__articleUseCase.createArticle(id, validatedData);
         return res.status(OK).json({
             success: true,
             message: "Article created successfully",
-            data: newArticle
-        })
+            data: newArticle,
+        });
     });
 
     getArticlesOfUserHandler = catchErrors(async (req: Request, res: Response) => {
+        console.log(req.params.id)
         const id = stringToObjectId(req.params.id);
         const articles = await this.__articleUseCase.getArticles(id);
         return res.status(OK).json({
@@ -52,6 +55,7 @@ export class ArticlesController {
     });
 
     editArticleHandler = catchErrors(async (req: Request, res: Response) => {
+        console.log(req.body)
         const { userId } = req as AuthenticatedRequest;
         const articleId = stringToObjectId(req.body.id);
         const articleData = req.body.articleData;
@@ -65,17 +69,19 @@ export class ArticlesController {
 
     deleteArticleHandler = catchErrors(async (req: Request, res: Response) => {
         const { userId } = req as AuthenticatedRequest;
-        const articleId = stringToObjectId(req.body.id);
+        const articleId = stringToObjectId(req.params.id);
         await this.__articleUseCase.deleteArticle(userId, articleId);
         return res.status(OK).json({
             success: true,
             message: "Article deleted successfully",
-        })
+        });
     });
+
 
 
     likeArticleHanlder = catchErrors(async (req: Request, res: Response) => {
         const { userId } = req as AuthenticatedRequest;
+        console.log("Req body : ", req.body)
         const articleId = stringToObjectId(req.body.articleId);
         await this.__articleUseCase.likeArticle(userId, articleId)
         return res.status(OK).json({
@@ -83,6 +89,17 @@ export class ArticlesController {
             message: "Successfully liked the post"
         })
     });
+
+    disLikeArticleHandler = catchErrors(async (req: Request, res: Response) => {
+        const { userId } = req as AuthenticatedRequest;
+        const articleId = stringToObjectId(req.body.articleId);
+        await this.__articleUseCase.disLikeArticle(userId, articleId)
+        return res.status(OK).json({
+            success: true,
+            message: "Successfully liked the post"
+        })
+
+    })
 
 
 }

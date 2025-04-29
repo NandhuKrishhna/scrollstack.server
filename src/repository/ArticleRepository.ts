@@ -3,6 +3,7 @@ import ArticleModel, { IArticleDocument } from "../models/article.model";
 import { IArticleRepository } from "../interface/IArticleRepository";
 import appAssert from "../utils/appAssert";
 import { NOT_FOUND } from "../constants/http";
+import { IArticleDocumentResponse } from "../types/user";
 
 export class ArticleRepository implements IArticleRepository {
 
@@ -10,9 +11,47 @@ export class ArticleRepository implements IArticleRepository {
         const newArticle = await ArticleModel.create({ ...article, author: id });
         return newArticle
     }
-    async getAllArticles(): Promise<IArticleDocument[]> {
-        return await ArticleModel.find().lean().exec();
-    };
+    async getAllArticles(): Promise<IArticleDocumentResponse[]> {
+        const articles = await ArticleModel.aggregate([
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "author",
+                }
+            },
+            {
+                $unwind: "$author"
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    description: 1,
+                    content: 1,
+                    category: 1,
+                    imageUrl: 1,
+                    tags: 1,
+                    status: 1,
+                    likes: 1,
+                    likedBy: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    author: {
+                        _id: "$author._id",
+                        name: "$author.name",
+                        profilePicture: "$author.profilePicture"
+                    }
+                }
+            }
+        ]);
+
+        return articles as IArticleDocumentResponse[];
+    }
+
+
+
 
     async getArticleById(id: mongoose.Types.ObjectId): Promise<IArticleDocument | null> {
         return await ArticleModel.findById(id).lean().exec();
@@ -27,7 +66,7 @@ export class ArticleRepository implements IArticleRepository {
         await ArticleModel.findOneAndDelete({ _id: articleId, author: userId }).lean().exec();
     };
 
-    async likeArticle(id: mongoose.Types.ObjectId, articleId: mongoose.Types.ObjectId): Promise<void> {
+    async disLike(id: mongoose.Types.ObjectId, articleId: mongoose.Types.ObjectId): Promise<void> {
         const article = await ArticleModel.findOne({ _id: articleId });
         appAssert(article, NOT_FOUND, "Article not found. Please check again.");
         const hasLiked = article.likedBy.includes(id);
@@ -40,7 +79,19 @@ export class ArticleRepository implements IArticleRepository {
                 },
                 { new: true }
             ).lean().exec();
-        } else {
+        }
+    };
+
+
+    async getArticlesByAuthorId(userId: mongoose.Types.ObjectId): Promise<IArticleDocument[] | null> {
+        return await ArticleModel.find({ author: userId }).lean().exec();
+    };
+
+    async likeArticle(id: mongoose.Types.ObjectId, articleId: mongoose.Types.ObjectId): Promise<void> {
+        const article = await ArticleModel.findOne({ _id: articleId });
+        appAssert(article, NOT_FOUND, "Article not found. Please check again.");
+        const hasLiked = article.likedBy.includes(id);
+        if (!hasLiked) {
             await ArticleModel.findByIdAndUpdate(
                 articleId,
                 {
@@ -50,11 +101,7 @@ export class ArticleRepository implements IArticleRepository {
                 { new: true }
             ).lean().exec();
         }
-    };
-
-    async getArticlesByAuthorId(userId: mongoose.Types.ObjectId): Promise<IArticleDocument[] | null> {
-        return await ArticleModel.find({ author: userId }).lean().exec();
-    };
+    }
 
 
 
