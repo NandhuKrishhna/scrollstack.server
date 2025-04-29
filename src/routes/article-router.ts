@@ -8,7 +8,6 @@ const { articleController, authController } = initializeDependencies();
 
 articleRouter.post("/create-article", articleController.createArticleHandler);
 articleRouter.post("/add-preference", articleController.addPreferencesHandler);
-articleRouter.get("/get-all-articles", articleController.getAllArticlesHandler);
 articleRouter.get("/get-articles/:id", articleController.getArticlesOfUserHandler);
 articleRouter.patch("/edit-article", articleController.editArticleHandler);
 articleRouter.delete("/delete-article/:id", articleController.deleteArticleHandler);
