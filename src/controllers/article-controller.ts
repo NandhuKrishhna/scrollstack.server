@@ -8,6 +8,7 @@ import { preferencesSchema } from "../zod/preferences";
 import { createArticleSchema } from "../zod/articles";
 
 
+
 export class ArticlesController {
 
     constructor(private readonly __articleUseCase: ArticlesControllerUseCase) { }
@@ -44,15 +45,41 @@ export class ArticlesController {
     });
 
     getArticlesOfUserHandler = catchErrors(async (req: Request, res: Response) => {
-        console.log(req.params.id)
         const id = stringToObjectId(req.params.id);
-        const articles = await this.__articleUseCase.getArticles(id);
+        const {
+            search = "",
+            sortBy = "createdAt",
+            order = "desc",
+            page = "1",
+            limit = "10",
+            category = ""
+        } = req.query as {
+            search?: string;
+            sortBy?: string;
+            order?: "asc" | "desc";
+            page?: string;
+            limit?: string;
+            category?: string;
+        };
+
+        const queryOptions = {
+            search,
+            sortBy,
+            order,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            category
+        };
+
+        const articles = await this.__articleUseCase.getArticles(id, queryOptions);
+
         return res.status(OK).json({
             success: true,
             message: "Articles fetched successfully",
             data: articles
-        })
+        });
     });
+
 
     editArticleHandler = catchErrors(async (req: Request, res: Response) => {
         console.log(req.body)

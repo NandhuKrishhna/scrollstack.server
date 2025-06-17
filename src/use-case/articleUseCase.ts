@@ -6,6 +6,7 @@ import { IUserRepository } from "../interface/IUserRepository";
 import { IArticleRepository } from "../interface/IArticleRepository";
 import AppErrorCode from "../constants/appErrorCode";
 import cloudinary from "../services/cloudinary";
+import { ArticleQueryOptions } from "../types/articles.types";
 
 export class ArticlesControllerUseCase {
     constructor(
@@ -52,11 +53,10 @@ export class ArticlesControllerUseCase {
     }
 
 
-    async getArticles(id: mongoose.Types.ObjectId) {
-        const article = await this.__articleRepository.getArticlesByAuthorId(id);
-        appAssert(article, NOT_FOUND, "Article not found");
-        return article;
-    };
+    async getArticles(userId: mongoose.Types.ObjectId, options: ArticleQueryOptions): Promise<IArticleDocument[]> {
+        return await this.__articleRepository.getArticlesByAuthorId(userId, options);
+    }
+
 
     async updateArticle(userId: mongoose.Types.ObjectId, articleId: mongoose.Types.ObjectId, articleData: Partial<IArticleDocument>) {
         const user = await this.__userRepository.findUserById(userId);

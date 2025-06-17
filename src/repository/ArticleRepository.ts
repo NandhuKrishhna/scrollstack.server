@@ -4,6 +4,7 @@ import { IArticleRepository } from "../interface/IArticleRepository";
 import appAssert from "../utils/appAssert";
 import { NOT_FOUND } from "../constants/http";
 import { IArticleDocumentResponse } from "../types/user";
+import { ArticleQueryOptions } from "../types/articles.types";
 
 export class ArticleRepository implements IArticleRepository {
 
@@ -44,7 +45,8 @@ export class ArticleRepository implements IArticleRepository {
                         profilePicture: "$author.profilePicture"
                     }
                 }
-            }
+            },
+            { $sort: { createdAt: -1 } }
         ]);
 
         return articles as IArticleDocumentResponse[];
@@ -83,9 +85,39 @@ export class ArticleRepository implements IArticleRepository {
     };
 
 
-    async getArticlesByAuthorId(userId: mongoose.Types.ObjectId): Promise<IArticleDocument[] | null> {
-        return await ArticleModel.find({ author: userId }).lean().exec();
-    };
+    async getArticlesByAuthorId(userId: mongoose.Types.ObjectId, options: ArticleQueryOptions): Promise<IArticleDocument[]> {
+        const {
+            search = "",
+            sortBy = "createdAt",
+            order = "desc",
+            category = []
+        } = options;
+        const sortOrder = order === "asc" ? 1 : -1;
+
+        const query: any = {
+            author: userId,
+            status: "Published"
+        };
+
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+                { content: { $regex: search, $options: "i" } },
+                { tags: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        if (category) {
+            query.category = category;
+        }
+
+        return await ArticleModel.find(query)
+            .sort({ [sortBy]: sortOrder })
+            .lean()
+            .exec();
+    }
+
 
     async likeArticle(id: mongoose.Types.ObjectId, articleId: mongoose.Types.ObjectId): Promise<void> {
         const article = await ArticleModel.findOne({ _id: articleId });

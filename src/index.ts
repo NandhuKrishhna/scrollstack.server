@@ -1,6 +1,6 @@
 import "dotenv/config";
 import cors from "cors";
-import express from "express";
+import express, { Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import { APP_ORIGIN, PORT } from "./constants/env";
 import { connectDB } from "./config/MongoDBClient";
@@ -29,6 +29,7 @@ app.use(
 app.options("*", cors());
 app.use("/auth", authRouter);
 app.use("/auth", authenticate, articleRouter);
+
 
 app.use(errorHandler);
 
